@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  },
+  "scripts": {
+    "dev": "npm install",
+    "run": "npm install"
+  }
+}
