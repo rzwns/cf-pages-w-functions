@@ -25,9 +25,15 @@ export function onRequest(context) {
       // Combine header, payload, and signature to form the JWT
       const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
   
-      // Return the JWT as the response
-      return new Response(JSON.stringify({ jwt }), {
-        headers: { "Content-Type": "application/json" },
+      // Set the JWT token as a cookie with the SameSite attribute
+      const cookie = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/`;
+  
+      // Return a response with the cookie
+      return new Response("Token set in cookies.", {
+        headers: {
+          "Content-Type": "text/plain",
+          "Set-Cookie": cookie,
+        },
       });
     });
   }
