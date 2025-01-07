@@ -39,7 +39,7 @@ export async function onRequest(context) {
                                     // On successful logout, show the login form again without reloading
                                     document.getElementById("app").innerHTML = \`
                                         <h1>Login</h1>
-                                        <form id="login-form" method="POST" action="/login">
+                                        <form id="login-form" method="POST" action="/admin">
                                             <label for="username">Username:</label><br>
                                             <input type="text" id="username" name="username" required><br><br>
                                             <label for="password">Password:</label><br>
@@ -60,7 +60,7 @@ export async function onRequest(context) {
     }
 
     // Handle the form submission (POST request)
-    if (request.method === "POST" && new URL(request.url).pathname === "/login") {
+    if (request.method === "POST" && new URL(request.url).pathname === "/admin") {
         const formData = await request.formData();
         const username = formData.get("username");
         const password = formData.get("password");
@@ -100,7 +100,7 @@ export async function onRequest(context) {
                                         // On successful logout, show the login form again without reloading
                                         document.getElementById("app").innerHTML = \`
                                             <h1>Login</h1>
-                                            <form id="login-form" method="POST" action="/login">
+                                            <form id="login-form" method="POST" action="/admin">
                                                 <label for="username">Username:</label><br>
                                                 <input type="text" id="username" name="username" required><br><br>
                                                 <label for="password">Password:</label><br>
@@ -125,7 +125,7 @@ export async function onRequest(context) {
                     <body>
                         <div id="app">
                             <h1>Login</h1>
-                            <form id="login-form" method="POST" action="/login">
+                            <form id="login-form" method="POST" action="/admin">
                                 <label for="username">Username:</label><br>
                                 <input type="text" id="username" name="username" required><br><br>
                                 <label for="password">Password:</label><br>
@@ -139,7 +139,7 @@ export async function onRequest(context) {
                                 event.preventDefault();
                                 
                                 const formData = new FormData(this);
-                                const response = await fetch("/login", {
+                                const response = await fetch("/admin", {
                                     method: "POST",
                                     body: formData
                                 });
@@ -167,7 +167,7 @@ export async function onRequest(context) {
             <body>
                 <div id="app">
                     <h1>Login</h1>
-                    <form id="login-form" method="POST" action="/login">
+                    <form id="login-form" method="POST" action="/admin">
                         <label for="username">Username:</label><br>
                         <input type="text" id="username" name="username" required><br><br>
                         <label for="password">Password:</label><br>
@@ -181,7 +181,7 @@ export async function onRequest(context) {
                         event.preventDefault();
                         
                         const formData = new FormData(this);
-                        const response = await fetch("/login", {
+                        const response = await fetch("/admin", {
                             method: "POST",
                             body: formData
                         });
