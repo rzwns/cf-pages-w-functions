@@ -1,6 +1,4 @@
-// admin.js
-
-import jwt from 'jsonwebtoken';
+const jwt = require('jsonwebtoken');
 
 const SECRET_KEY = 'your-secret-key'; // Secret key for JWT signing, keep this safe
 const USERNAME = 'admin';
