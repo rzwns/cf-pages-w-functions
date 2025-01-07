@@ -16,7 +16,7 @@ export async function onRequest(context) {
             </div>
             <script>
               function logout() {
-                // Clear the token cookie and reload
+                // Send a request to the server to log out
                 fetch("/logout", { method: "POST" })
                   .then(() => location.reload());
               }
@@ -83,6 +83,7 @@ export async function onRequest(context) {
                 <p>You are logged in!</p>
               </div>
               <script>
+                // Set the token cookie
                 document.cookie = "${cookie}";
                 function logout() {
                   fetch("/logout", { method: "POST" })
