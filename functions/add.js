@@ -38,7 +38,7 @@ async function generateToken(payload, secret, expiresIn = 3600) {
 export async function onRequest(context) {
     const { request } = context;
 
-    if (request.method !== "POST") {
+    if (request.method !== "GET") {
         return new Response("Method Not Allowed", { status: 405 });
     }
 
