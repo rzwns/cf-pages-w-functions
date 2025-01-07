@@ -1,66 +1,67 @@
-import { encode } from "base64url";
-
-const SECRET_KEY = "your-secret-key"; // Replace with a strong, secure key
-
-// Helper function to generate a JWT
-async function generateToken(payload, secret, expiresIn = 3600) {
+export function onRequest(context) {
+    // Define your secret key
+    const secretKey = "your-very-secure-secret-key";
+  
+    // Create the JWT header
     const header = {
-        alg: "HS256",
-        typ: "JWT",
+      alg: "HS256",
+      typ: "JWT",
     };
-
-    const headerBase64 = encode(JSON.stringify(header));
-    const payloadWithExp = {
-        ...payload,
-        exp: Math.floor(Date.now() / 1000) + expiresIn,
+  
+    // Create the JWT payload
+    const payload = {
+      sub: "1234567890",
+      name: "John Doe",
+      iat: Math.floor(Date.now() / 1000),
     };
-    const payloadBase64 = encode(JSON.stringify(payloadWithExp));
-
-    const data = `${headerBase64}.${payloadBase64}`;
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
+  
+    // Encode the header and payload as Base64Url
+    const encodedHeader = toBase64Url(JSON.stringify(header));
+    const encodedPayload = toBase64Url(JSON.stringify(payload));
+  
+    // Create the signature
+    const data = `${encodedHeader}.${encodedPayload}`;
+    return createHmacSignature(data, secretKey).then((signature) => {
+      // Combine header, payload, and signature to form the JWT
+      const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
+  
+      // Set the JWT token as a cookie with the SameSite attribute
+      const cookie = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/`;
+  
+      // Return a response with the cookie
+      return new Response("Token set in cookies.", {
+        headers: {
+          "Content-Type": "text/plain",
+          "Set-Cookie": cookie,
+        },
+      });
+    });
+  }
+  
+  // Helper function to Base64Url encode a string
+  function toBase64Url(str) {
+    return btoa(str)
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+  }
+  
+  // Helper function to create an HMAC-SHA256 signature
+  async function createHmacSignature(data, key) {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: { name: "SHA-256" } },
+      false,
+      ["sign"]
     );
-
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(data)
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      cryptoKey,
+      encoder.encode(data)
     );
-
-    return `${data}.${encode(new Uint8Array(signature))}`;
-}
-
-// Function to handle login and set JWT token
-export async function onRequest(context) {
-    const { request } = context;
-
-    if (request.method !== "POST") {
-        return new Response("Method Not Allowed", { status: 405 });
-    }
-
-    const { username, password } = await request.json();
-
-    if (username === "admin" && password === "admin") {
-        const token = await generateToken({ username }, SECRET_KEY);
-
-        return new Response(
-            JSON.stringify({ message: "Login successful" }),
-            {
-                status: 200,
-                headers: {
-                    "Content-Type": "application/json",
-                    "Set-Cookie": `token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=3600`,
-                },
-            }
-        );
-    } else {
-        return new Response(
-            JSON.stringify({ message: "Invalid credentials" }),
-            { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-    }
-}
+    return toBase64Url(String.fromCharCode(...new Uint8Array(signatureBuffer)));
+  }
+  
