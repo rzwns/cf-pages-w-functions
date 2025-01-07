@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "jose": "^5.9.6"
+    "base64url": "^3.0.1"
   },
   "scripts": {
     "dev": "npm install",
