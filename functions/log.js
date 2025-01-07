@@ -57,7 +57,7 @@ export async function onRequest(context) {
       const password = formData.get("password");
   
       // Validate credentials
-      if (username === "admin" && password === "admin") {
+      if (username === "rzwn" && password === "rzwm121") {
         // Generate the JWT token
         const secretKey = "your-very-secure-secret-key";
         const header = { alg: "HS256", typ: "JWT" };
