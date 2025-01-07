@@ -48,6 +48,10 @@ export async function onRequest(context) {
                                         </form>
                                         <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
                                     \`;
+                                    // Remove the ?t=logout parameter from the URL
+                                    const url = new URL(window.location);
+                                    url.searchParams.delete('t');
+                                    window.history.pushState({}, '', url);
                                 });
                         }
                     </script>
@@ -109,6 +113,10 @@ export async function onRequest(context) {
                                             </form>
                                             <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
                                         \`;
+                                        // Remove the ?t=logout parameter from the URL
+                                        const url = new URL(window.location);
+                                        url.searchParams.delete('t');
+                                        window.history.pushState({}, '', url);
                                     });
                             }
                         </script>
