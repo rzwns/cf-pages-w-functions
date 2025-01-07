@@ -51,13 +51,13 @@ export async function onRequest(context) {
     }
   
     // Handle the form submission (POST request)
-    if (request.method === "POST") {
+    if (request.method === "POST" && new URL(request.url).pathname === "/login") {
       const formData = await request.formData();
       const username = formData.get("username");
       const password = formData.get("password");
   
       // Validate credentials
-      if (username === "rzwn" && password === "rzwm121") {
+      if (username === "admin" && password === "admin") {
         // Generate the JWT token
         const secretKey = "your-very-secure-secret-key";
         const header = { alg: "HS256", typ: "JWT" };
@@ -103,7 +103,7 @@ export async function onRequest(context) {
             <body>
               <div id="app">
                 <h1>Login</h1>
-                <form id="login-form">
+                <form id="login-form" method="POST" action="/login">
                   <label for="username">Username:</label><br>
                   <input type="text" id="username" name="username" required><br><br>
                   <label for="password">Password:</label><br>
@@ -117,7 +117,7 @@ export async function onRequest(context) {
                   event.preventDefault();
                   
                   const formData = new FormData(this);
-                  const response = await fetch("/", {
+                  const response = await fetch("/login", {
                     method: "POST",
                     body: formData
                   });
@@ -145,7 +145,7 @@ export async function onRequest(context) {
         <body>
           <div id="app">
             <h1>Login</h1>
-            <form id="login-form">
+            <form id="login-form" method="POST" action="/login">
               <label for="username">Username:</label><br>
               <input type="text" id="username" name="username" required><br><br>
               <label for="password">Password:</label><br>
@@ -159,7 +159,7 @@ export async function onRequest(context) {
               event.preventDefault();
               
               const formData = new FormData(this);
-              const response = await fetch("/", {
+              const response = await fetch("/login", {
                 method: "POST",
                 body: formData
               });
