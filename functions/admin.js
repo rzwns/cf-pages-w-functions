@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+// admin.js
 
 const SECRET_KEY = 'your-secret-key'; // Secret key for JWT signing, keep this safe
 const USERNAME = 'admin';
@@ -15,6 +15,42 @@ function getCookie(cookies, name) {
     return match ? match.split('=')[1] : null;
 }
 
+// Base64 URL decode function
+function base64UrlDecode(str) {
+    return JSON.parse(decodeURIComponent(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
+}
+
+// Function to create HMAC SHA256 signature
+function createHmacSignature(data, secret) {
+    const crypto = require('crypto');
+    return crypto.createHmac('sha256', secret).update(data).digest('base64url');
+}
+
+// Function to verify JWT
+function verifyJwt(token) {
+    const [header, payload, signature] = token.split('.');
+    
+    // Decode the header and payload
+    const decodedHeader = base64UrlDecode(header);
+    const decodedPayload = base64UrlDecode(payload);
+
+    // Check if the token is expired
+    if (decodedPayload.exp && Date.now() >= decodedPayload.exp * 1000) {
+        throw new Error('Token expired');
+    }
+
+    // Recreate the signature
+    const data = `${header}.${payload}`;
+    const expectedSignature = createHmacSignature(data, SECRET_KEY);
+
+    // Compare the recreated signature with the token's signature
+    if (expectedSignature !== signature) {
+        throw new Error('Invalid token');
+    }
+
+    return decodedPayload; // Return the decoded payload if verification is successful
+}
+
 // Main function handling requests
 export async function onRequest(context) {
     const { request } = context;
@@ -26,7 +62,12 @@ export async function onRequest(context) {
 
         // Check if credentials match
         if (username === USERNAME && password === PASSWORD) {
-            const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+            const exp = Math.floor(Date.now() / 1000) + (60 * 60); // 1 hour expiration
+            const payload = { username, exp };
+            const header = { alg: 'HS256', typ: 'JWT' };
+
+            // Create the token
+            const token = `${btoa(JSON.stringify(header))}.${btoa(JSON.stringify(payload))}.${createHmacSignature(`${btoa(JSON.stringify(header))}.${btoa(JSON.stringify(payload))}`, SECRET_KEY)}`;
 
             return new Response(JSON.stringify({ message: 'Login successful' }), {
                 status: 200,
@@ -67,7 +108,7 @@ export async function onRequest(context) {
 
         try {
             // Verify the token
-            const decoded = jwt.verify(token, SECRET_KEY);
+            const decoded = verifyJwt(token);
 
             // If token is valid, show the admin dashboard
             return new Response(`
