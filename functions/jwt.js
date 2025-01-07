@@ -1,67 +1,119 @@
-export function onRequest(context) {
-    // Define your secret key
-    const secretKey = "your-very-secure-secret-key";
-  
-    // Create the JWT header
+const SECRET_KEY = "your-secret-key"; // Replace with a strong secret key
+
+import { encode } from "base64url";
+
+// Helper function to generate a JWT
+async function generateToken(payload, secret, expiresIn = 3600) {
     const header = {
-      alg: "HS256",
-      typ: "JWT",
+        alg: "HS256",
+        typ: "JWT",
     };
-  
-    // Create the JWT payload
-    const payload = {
-      sub: "1234567890",
-      name: "John Doe",
-      iat: Math.floor(Date.now() / 1000),
+
+    const headerBase64 = encode(JSON.stringify(header));
+    const payloadWithExp = {
+        ...payload,
+        exp: Math.floor(Date.now() / 1000) + expiresIn,
     };
-  
-    // Encode the header and payload as Base64Url
-    const encodedHeader = toBase64Url(JSON.stringify(header));
-    const encodedPayload = toBase64Url(JSON.stringify(payload));
-  
-    // Create the signature
-    const data = `${encodedHeader}.${encodedPayload}`;
-    return createHmacSignature(data, secretKey).then((signature) => {
-      // Combine header, payload, and signature to form the JWT
-      const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
-  
-      // Set the JWT token as a cookie with the SameSite attribute
-      const cookie = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/`;
-  
-      // Return a response with the cookie
-      return new Response("Token set in cookies.", {
-        headers: {
-          "Content-Type": "text/plain",
-          "Set-Cookie": cookie,
-        },
-      });
-    });
-  }
-  
-  // Helper function to Base64Url encode a string
-  function toBase64Url(str) {
-    return btoa(str)
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-  }
-  
-  // Helper function to create an HMAC-SHA256 signature
-  async function createHmacSignature(data, key) {
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(key);
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: { name: "SHA-256" } },
-      false,
-      ["sign"]
+    const payloadBase64 = encode(JSON.stringify(payloadWithExp));
+
+    const data = `${headerBase64}.${payloadBase64}`;
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
     );
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC",
-      cryptoKey,
-      encoder.encode(data)
+
+    const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        new TextEncoder().encode(data)
     );
-    return toBase64Url(String.fromCharCode(...new Uint8Array(signatureBuffer)));
-  }
-  
+
+    return `${data}.${encode(new Uint8Array(signature))}`;
+}
+
+// Main function to handle login and display form or dashboard
+export async function onRequest(context) {
+    const { request } = context;
+
+    if (request.method === "GET") {
+        // Display the login form
+        return new Response(
+            `
+            <html>
+                <head><title>Login</title></head>
+                <body>
+                    <h1>Login</h1>
+                    <form method="POST" action="/">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required />
+                        <br />
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required />
+                        <br />
+                        <button type="submit">Login</button>
+                    </form>
+                </body>
+            </html>
+            `,
+            { headers: { "Content-Type": "text/html" } }
+        );
+    }
+
+    if (request.method === "POST") {
+        const formData = await request.formData();
+        const username = formData.get("username");
+        const password = formData.get("password");
+
+        if (username === "admin" && password === "admin") {
+            const token = await generateToken({ username }, SECRET_KEY);
+
+            // Show the admin dashboard with a cookie set
+            return new Response(
+                `
+                <html>
+                    <head><title>Admin Dashboard</title></head>
+                    <body>
+                        <h1>Welcome to the Admin Dashboard</h1>
+                        <p>You are logged in as ${username}.</p>
+                    </body>
+                </html>
+                `,
+                {
+                    status: 200,
+                    headers: {
+                        "Content-Type": "text/html",
+                        "Set-Cookie": `token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=3600`,
+                    },
+                }
+            );
+        } else {
+            // Show invalid credentials error and redisplay the form
+            return new Response(
+                `
+                <html>
+                    <head><title>Login</title></head>
+                    <body>
+                        <h1>Login</h1>
+                        <p style="color: red;">Invalid credentials. Please try again.</p>
+                        <form method="POST" action="/">
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username" required />
+                            <br />
+                            <label for="password">Password:</label>
+                            <input type="password" id="password" name="password" required />
+                            <br />
+                            <button type="submit">Login</button>
+                        </form>
+                    </body>
+                </html>
+                `,
+                { headers: { "Content-Type": "text/html" } }
+            );
+        }
+    }
+
+    return new Response("Method Not Allowed", { status: 405 });
+}
