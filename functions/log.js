@@ -16,13 +16,36 @@ export async function onRequest(context) {
             </div>
             <script>
               function logout() {
-                document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure;';
-                location.reload();
+                // Clear the token cookie and reload
+                fetch("/logout", { method: "POST" })
+                  .then(() => location.reload());
               }
             </script>
           </body>
         </html>
       `, {
+        headers: { "Content-Type": "text/html" }
+      });
+    }
+  
+    // Handle logout (clear cookie)
+    if (request.method === "POST" && new URL(request.url).pathname === "/logout") {
+      return new Response(`
+        <html>
+          <body>
+            <div id="app">
+              <h1>You have been logged out.</h1>
+              <p>Redirecting to login...</p>
+            </div>
+            <script>
+              // Clear the token cookie and reload the page after a delay
+              document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure;';
+              setTimeout(() => { location.href = "/"; }, 2000);
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 200,
         headers: { "Content-Type": "text/html" }
       });
     }
@@ -62,8 +85,8 @@ export async function onRequest(context) {
               <script>
                 document.cookie = "${cookie}";
                 function logout() {
-                  document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure;';
-                  location.reload();
+                  fetch("/logout", { method: "POST" })
+                    .then(() => location.reload());
                 }
               </script>
             </body>
