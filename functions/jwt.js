@@ -1,37 +1,36 @@
-export default {
-    async fetch(request) {
-      // Define your secret key
-      const secretKey = "your-very-secure-secret-key";
+export function onRequest(context) {
+    // Define your secret key
+    const secretKey = "your-very-secure-secret-key";
   
-      // Create the JWT header
-      const header = {
-        alg: "HS256",
-        typ: "JWT",
-      };
+    // Create the JWT header
+    const header = {
+      alg: "HS256",
+      typ: "JWT",
+    };
   
-      // Create the JWT payload
-      const payload = {
-        sub: "1234567890",
-        name: "John Doe",
-        iat: Math.floor(Date.now() / 1000),
-      };
+    // Create the JWT payload
+    const payload = {
+      sub: "1234567890",
+      name: "John Doe",
+      iat: Math.floor(Date.now() / 1000),
+    };
   
-      // Encode the header and payload as Base64Url
-      const encodedHeader = toBase64Url(JSON.stringify(header));
-      const encodedPayload = toBase64Url(JSON.stringify(payload));
+    // Encode the header and payload as Base64Url
+    const encodedHeader = toBase64Url(JSON.stringify(header));
+    const encodedPayload = toBase64Url(JSON.stringify(payload));
   
-      // Create the signature
-      const data = `${encodedHeader}.${encodedPayload}`;
-      const signature = await createHmacSignature(data, secretKey);
-  
+    // Create the signature
+    const data = `${encodedHeader}.${encodedPayload}`;
+    return createHmacSignature(data, secretKey).then((signature) => {
       // Combine header, payload, and signature to form the JWT
       const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
   
+      // Return the JWT as the response
       return new Response(JSON.stringify({ jwt }), {
         headers: { "Content-Type": "application/json" },
       });
-    },
-  };
+    });
+  }
   
   // Helper function to Base64Url encode a string
   function toBase64Url(str) {
