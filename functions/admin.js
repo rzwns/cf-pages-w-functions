@@ -1,8 +1,6 @@
-// admin.js
+import { SignJWT, jwtVerify } from 'jose';
 
-import jwt from 'jsonwebtoken';
-
-const SECRET_KEY = 'your-secret-key'; // Secret key for JWT signing, keep this safe
+const SECRET_KEY = new TextEncoder().encode('your-secret-key'); // Use Uint8Array for keys
 const USERNAME = 'admin';
 const PASSWORD = 'admin';
 
@@ -22,19 +20,19 @@ export async function onRequest(context) {
     const { request } = context;
     const url = new URL(request.url);
 
-    // Handle Login Form Submission (POST)
     if (url.pathname === '/login' && request.method === 'POST') {
         const { username, password } = await request.json();
-
-        // Check if credentials match
         if (username === USERNAME && password === PASSWORD) {
-            const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+            const token = await new SignJWT({ username })
+                .setProtectedHeader({ alg: 'HS256' })
+                .setExpirationTime('1h')
+                .sign(SECRET_KEY);
 
             return new Response(JSON.stringify({ message: 'Login successful' }), {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Set-Cookie': setCookie(token), // Set JWT token in HttpOnly cookie
+                    'Set-Cookie': setCookie(token),
                 },
             });
         } else {
@@ -45,38 +43,31 @@ export async function onRequest(context) {
         }
     }
 
-    // Handle Logout (GET) - Clear the JWT cookie
     if (url.pathname === '/logout') {
         return new Response(JSON.stringify({ message: 'Logged out successfully' }), {
             status: 200,
             headers: {
-                'Set-Cookie': 'token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0', // Clear token
+                'Set-Cookie': 'token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0',
                 'Content-Type': 'application/json',
             },
         });
     }
 
-    // Check if the user is authenticated (has a valid JWT token)
     const cookies = request.headers.get('Cookie');
     const token = getCookie(cookies, 'token');
 
-    // Admin Dashboard (GET)
     if (url.pathname === '/admin') {
         if (!token) {
-            // If no token, redirect to login page
             return Response.redirect('/login');
         }
 
         try {
-            // Verify the token
-            const decoded = jwt.verify(token, SECRET_KEY);
-
-            // If token is valid, show the admin dashboard
+            const { payload } = await jwtVerify(token, SECRET_KEY);
             return new Response(`
                 <html>
                     <body>
                         <h1>Admin Dashboard</h1>
-                        <p>Welcome, ${decoded.username}!</p>
+                        <p>Welcome, ${payload.username}!</p>
                         <a href="/logout">Logout</a>
                     </body>
                 </html>
@@ -85,12 +76,10 @@ export async function onRequest(context) {
                 headers: { 'Content-Type': 'text/html' },
             });
         } catch (err) {
-            // Invalid or expired token, redirect to login page
             return Response.redirect('/login');
         }
     }
 
-    // If no valid path is found, return the login page (GET)
     if (url.pathname === '/login') {
         return new Response(`
             <html>
@@ -99,34 +88,25 @@ export async function onRequest(context) {
                     <form id="login-form">
                         <label for="username">Username: </label>
                         <input type="text" id="username" name="username" required><br><br>
-                        
                         <label for="password">Password: </label>
                         <input type="password" id="password" name="password" required><br><br>
-                        
                         <button type="submit">Login</button>
                     </form>
-
                     <script>
                         document.getElementById('login-form').addEventListener('submit', async function(event) {
                             event.preventDefault();
-
                             const username = document.getElementById('username').value;
                             const password = document.getElementById('password').value;
-
                             const response = await fetch('/login', {
                                 method: 'POST',
                                 body: JSON.stringify({ username, password }),
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                }
+                                headers: { 'Content-Type': 'application/json' },
                             });
-
                             const data = await response.json();
-
                             if (response.ok) {
-                                window.location.href = '/admin';  // Redirect to admin page after successful login
+                                window.location.href = '/admin';
                             } else {
-                                alert(data.message);  // Show error message
+                                alert(data.message);
                             }
                         });
                     </script>
@@ -138,6 +118,5 @@ export async function onRequest(context) {
         });
     }
 
-    // If route doesn't match, return 404
     return new Response('Not Found', { status: 404 });
 }

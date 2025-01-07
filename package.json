@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jose": "^5.9.6"
   },
   "scripts": {
     "dev": "npm install",
