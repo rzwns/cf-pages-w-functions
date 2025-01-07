@@ -37,6 +37,7 @@ async function generateToken(payload, secret, expiresIn = 3600) {
 // Main function to handle login and display form or dashboard
 export async function onRequest(context) {
     const { request } = context;
+    const url = new URL(request.url);
 
     if (request.method === "GET") {
         // Display the login form
@@ -46,7 +47,7 @@ export async function onRequest(context) {
                 <head><title>Login</title></head>
                 <body>
                     <h1>Login</h1>
-                    <form method="POST" action="/">
+                    <form method="POST" action="${url.pathname}">
                         <label for="username">Username:</label>
                         <input type="text" id="username" name="username" required />
                         <br />
@@ -98,7 +99,7 @@ export async function onRequest(context) {
                     <body>
                         <h1>Login</h1>
                         <p style="color: red;">Invalid credentials. Please try again.</p>
-                        <form method="POST" action="/">
+                        <form method="POST" action="${url.pathname}">
                             <label for="username">Username:</label>
                             <input type="text" id="username" name="username" required />
                             <br />
