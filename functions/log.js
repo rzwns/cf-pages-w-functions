@@ -1,16 +1,25 @@
 export async function onRequest(context) {
     const { request } = context;
-    const url = new URL(request.url);
     const cookies = parseCookies(request.headers.get("Cookie"));
-    
-    // Check if user is already logged in by looking for JWT cookie
+  
+    // If the user is logged in (JWT present), show the admin dashboard
     if (cookies.token) {
-      // Redirect to the admin dashboard if logged in
       return new Response(`
         <html>
           <body>
-            <h1>Welcome to the Admin Dashboard</h1>
-            <p>You are logged in!</p>
+            <div id="app">
+              <div style="position: absolute; top: 10px; right: 10px;">
+                <button onclick="logout()">Logout</button>
+              </div>
+              <h1>Welcome to the Admin Dashboard</h1>
+              <p>You are logged in!</p>
+            </div>
+            <script>
+              function logout() {
+                document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure;';
+                location.reload();
+              }
+            </script>
           </body>
         </html>
       `, {
@@ -18,29 +27,22 @@ export async function onRequest(context) {
       });
     }
   
-    // Check if the form is submitted (POST request)
+    // Handle the form submission (POST request)
     if (request.method === "POST") {
       const formData = await request.formData();
       const username = formData.get("username");
       const password = formData.get("password");
   
-      // Validate the credentials
+      // Validate credentials
       if (username === "admin" && password === "admin") {
-        // Create the JWT token
+        // Generate the JWT token
         const secretKey = "your-very-secure-secret-key";
-        const header = {
-          alg: "HS256",
-          typ: "JWT",
-        };
-        const payload = {
-          sub: "1234567890",
-          name: "Admin",
-          iat: Math.floor(Date.now() / 1000),
-        };
+        const header = { alg: "HS256", typ: "JWT" };
+        const payload = { sub: "1234567890", name: "Admin", iat: Math.floor(Date.now() / 1000) };
         const encodedHeader = toBase64Url(JSON.stringify(header));
         const encodedPayload = toBase64Url(JSON.stringify(payload));
         const data = `${encodedHeader}.${encodedPayload}`;
-        
+  
         const signature = await createHmacSignature(data, secretKey);
         const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
   
@@ -50,26 +52,60 @@ export async function onRequest(context) {
         return new Response(`
           <html>
             <body>
-              <h1>Login Successful</h1>
-              <p>Redirecting to the admin dashboard...</p>
-              <script>setTimeout(() => { window.location.href = "/"; }, 2000);</script>
+              <div id="app">
+                <div style="position: absolute; top: 10px; right: 10px;">
+                  <button onclick="logout()">Logout</button>
+                </div>
+                <h1>Welcome to the Admin Dashboard</h1>
+                <p>You are logged in!</p>
+              </div>
+              <script>
+                document.cookie = "${cookie}";
+                function logout() {
+                  document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure;';
+                  location.reload();
+                }
+              </script>
             </body>
           </html>
         `, {
           status: 200,
-          headers: {
-            "Set-Cookie": cookie,
-            "Content-Type": "text/html"
-          }
+          headers: { "Set-Cookie": cookie, "Content-Type": "text/html" }
         });
       } else {
-        // Invalid credentials, show error
+        // Invalid credentials error
         return new Response(`
           <html>
             <body>
-              <h1>Invalid Credentials</h1>
-              <p>The username or password you entered is incorrect.</p>
-              <a href="/">Back to Login</a>
+              <div id="app">
+                <h1>Login</h1>
+                <form id="login-form">
+                  <label for="username">Username:</label><br>
+                  <input type="text" id="username" name="username" required><br><br>
+                  <label for="password">Password:</label><br>
+                  <input type="password" id="password" name="password" required><br><br>
+                  <input type="submit" value="Login">
+                </form>
+                <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
+              </div>
+              <script>
+                document.getElementById("login-form").addEventListener("submit", async function(event) {
+                  event.preventDefault();
+                  
+                  const formData = new FormData(this);
+                  const response = await fetch("/", {
+                    method: "POST",
+                    body: formData
+                  });
+                  
+                  const text = await response.text();
+                  if (response.status === 200) {
+                    document.getElementById("app").innerHTML = text;
+                  } else {
+                    document.getElementById("error-message").style.display = "block";
+                  }
+                });
+              </script>
             </body>
           </html>
         `, {
@@ -79,18 +115,39 @@ export async function onRequest(context) {
       }
     }
   
-    // Show the login form if no JWT is found or on GET request
+    // Default login form if not logged in
     return new Response(`
       <html>
         <body>
-          <h1>Login</h1>
-          <form method="POST">
-            <label for="username">Username:</label><br>
-            <input type="text" id="username" name="username" required><br><br>
-            <label for="password">Password:</label><br>
-            <input type="password" id="password" name="password" required><br><br>
-            <input type="submit" value="Login">
-          </form>
+          <div id="app">
+            <h1>Login</h1>
+            <form id="login-form">
+              <label for="username">Username:</label><br>
+              <input type="text" id="username" name="username" required><br><br>
+              <label for="password">Password:</label><br>
+              <input type="password" id="password" name="password" required><br><br>
+              <input type="submit" value="Login">
+            </form>
+            <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
+          </div>
+          <script>
+            document.getElementById("login-form").addEventListener("submit", async function(event) {
+              event.preventDefault();
+              
+              const formData = new FormData(this);
+              const response = await fetch("/", {
+                method: "POST",
+                body: formData
+              });
+              
+              const text = await response.text();
+              if (response.status === 200) {
+                document.getElementById("app").innerHTML = text;
+              } else {
+                document.getElementById("error-message").style.display = "block";
+              }
+            });
+          </script>
         </body>
       </html>
     `, {
