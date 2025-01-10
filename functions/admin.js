@@ -31,27 +31,28 @@ export async function onRequest(context) {
                         <p>You are logged in!</p>
                     </div>
                     <script>
-                        // Set the token cookie
-                        document.cookie = "${cookie}";
                         function logout() {
                             fetch("?t=logout", { method: "POST" })
-                                .then(() => {
-                                    // On successful logout, show the login form again without reloading
-                                    document.getElementById("app").innerHTML = \`
-                                        <h1>Login</h1>
-                                        <form id="login-form" method="POST" action="/admin">
-                                            <label for="username">Username:</label><br>
-                                            <input type="text" id="username" name="username" required><br><br>
-                                            <label for="password">Password:</label><br>
-                                            <input type="password" id="password" name="password" required><br><br>
-                                            <input type="submit" value="Login">
-                                        </form>
-                                        <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
-                                    \`;
-                                    // Remove the ?t=logout parameter from the URL
-                                    const url = new URL(window.location);
-                                    url.searchParams.delete('t');
-                                    window.history.pushState({}, '', url);
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.message === "Logged out successfully") {
+                                        // On successful logout, show the login form again without reloading
+                                        document.getElementById("app").innerHTML = \`
+                                            <h1>Login</h1>
+                                            <form id="login-form" method="POST" action="/admin">
+                                                <label for="username">Username:</label><br>
+                                                <input type="text" id="username" name="username" required><br><br>
+                                                <label for="password">Password:</label><br>
+                                                <input type="password" id="password" name="password" required><br><br>
+                                                <input type="submit" value="Login">
+                                            </form>
+                                            <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
+                                        \`;
+                                        // Remove the ?t=logout parameter from the URL
+                                        const url = new URL(window.location);
+                                        url.searchParams.delete('t');
+                                        window.history.pushState({}, '', url);
+                                    }
                                 });
                         }
                     </script>
@@ -59,7 +60,7 @@ export async function onRequest(context) {
             </html>
         `, {
             status: 200,
-            headers: { "Set-Cookie": cookie, "Content-Type": "text/html" }
+            headers: { "Content-Type": "text/html" }
         });
     }
 
@@ -96,27 +97,28 @@ export async function onRequest(context) {
                             <p>You are logged in!</p>
                         </div>
                         <script>
-                            // Set the token cookie
-                            document.cookie = "${cookie}";
                             function logout() {
                                 fetch("?t=logout", { method: "POST" })
-                                    .then(() => {
-                                        // On successful logout, show the login form again without reloading
-                                        document.getElementById("app").innerHTML = \`
-                                            <h1>Login</h1>
-                                            <form id="login-form" method="POST" action="/admin">
-                                                <label for="username">Username:</label><br>
-                                                <input type="text" id="username" name="username" required><br><br>
-                                                <label for="password">Password:</label><br>
-                                                <input type="password" id="password" name="password" required><br><br>
-                                                <input type="submit" value="Login">
-                                            </form>
-                                            <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
-                                        \`;
-                                        // Remove the ?t=logout parameter from the URL
-                                        const url = new URL(window.location);
-                                        url.searchParams.delete('t');
-                                        window.history.pushState({}, '', url);
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.message === "Logged out successfully") {
+                                            // On successful logout, show the login form again without reloading
+                                            document.getElementById("app").innerHTML = \`
+                                                <h1>Login</h1>
+                                                <form id="login-form" method="POST" action="/admin">
+                                                    <label for="username">Username:</label><br>
+                                                    <input type="text" id="username" name="username" required><br><br>
+                                                    <label for="password">Password:</label><br>
+                                                    <input type="password" id="password" name="password" required><br><br>
+                                                    <input type="submit" value="Login">
+                                                </form>
+                                                <p id="error-message" style="color: red; display: none;">Invalid credentials. Please try again.</p>
+                                            \`;
+                                            // Remove the ?t=logout parameter from the URL
+                                            const url = new URL(window.location);
+                                            url.searchParams.delete('t');
+                                            window.history.pushState({}, '', url);
+                                        }
                                     });
                             }
                         </script>
