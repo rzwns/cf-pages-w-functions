@@ -1,9 +1,13 @@
 {
   "dependencies": {
-    "base64url": "^3.0.1"
+    "base64url": "^3.0.1",
+    "crypto-js": "^4.2.0"
   },
   "scripts": {
     "dev": "npm install",
     "run": "npm install"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2"
   }
 }
